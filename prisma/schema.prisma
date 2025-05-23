@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  user_id         Int             @id @default(autoincrement())
+  username        String          @db.VarChar(50)
+  password        String          @db.VarChar(255)
+  email           String          @unique(map: "email") @db.VarChar(100)
+  profile_pitcure String?         @db.VarChar(255)
+  subs_count      Int
+  is_verified     Boolean?        @default(false)
+  created_at      DateTime        @default(now()) @db.Timestamp(0)
+  update_at       DateTime        @default(now()) @db.Timestamp(0)
+  commentary      commentary[]
+  playlist        playlist[]
+  video           video[]
+  watch_history   watch_history[]
+}
+
+model video {
+  video_id      Int             @id @default(autoincrement())
+  title         String          @db.VarChar(255)
+  desc          String?         @db.Text
+  video_url     String          @db.VarChar(255)
+  thumbnail_url String?         @db.VarChar(255)
+  duration      Int?
+  view_count    Int?            @default(0)
+  user_id       Int?
+  created_at    DateTime        @db.Timestamp(0)
+  commentary    commentary[]
+  user          user?           @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "video_ibfk_1")
+  watch_history watch_history[]
+  @@index([user_id], map: "user_id")
+}
+model commentary {
+  comment_id   Int      @id @default(autoincrement())
+  comment_text String?  @db.Text
+  user_id      Int?
+  video_id     Int?
+  created_at   DateTime @db.Timestamp(0)
+  user         user?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "commentary_ibfk_1")
+  video        video?   @relation(fields: [video_id], references: [video_id], onDelete: Cascade, onUpdate: NoAction, map: "commentary_ibfk_2")
+
+  @@index([user_id], map: "user_id")
+  @@index([video_id], map: "video_id")
+}
+
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model membership {
+  mbs_id        Int      @id
+  user_id       Int
+  membership_to DateTime @db.Date
+  mbs_at        DateTime @db.Date
+
+  @@index([user_id], map: "user_id")
+
+}
+
+
+model playlist {
+  playlist_id Int      @id @default(autoincrement())
+  name        String?  @db.VarChar(100)
+  description String?  @db.Text
+  user_id     Int?
+  created_at  DateTime @db.Timestamp(0)
+  user        user?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "playlist_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model playlist_video {
+  playlist_video_id Int      @id
+  playlist_id       Int?
+  video_id          Int?
+  update_at         DateTime @db.Timestamp(0)
+
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model report {
+  report_id         Int      @id
+  report_comment_id Int?
+  report_video_id   Int?
+  created_at        DateTime @db.Timestamp(0)
+
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model subscription {
+  subs_id   Int       @id
+  user_id   Int
+  subs_date DateTime? @default(now()) @db.Timestamp(0)
+
+    @@index([user_id], map: "user_id")
+}
+
+
+model watch_history {
+  history_id     Int      @id @default(autoincrement())
+  user_id        Int?
+  video_id       Int?
+  watched_at     DateTime @db.Timestamp(0)
+  watch_duration Int?
+  user           user?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "watch_history_ibfk_1")
+  video          video?   @relation(fields: [video_id], references: [video_id], onDelete: Cascade, onUpdate: NoAction, map: "watch_history_ibfk_2")
+
+  @@index([user_id], map: "user_id")
+  @@index([video_id], map: "video_id")
+}
+
+enum like_dislike_action {
+  Like
+  Dislike
+}
+
+enum notification_type {
+  comment
+  like
+  subscription
+  upload
+  system
+}
